@@ -218,3 +218,6 @@ def intake():
 
 control.buttonR2.pressed(wheeldown)  
 control.buttonR1.pressed(intake)  
+
+#temp
+control.buttonY.pressed(autoton)  
