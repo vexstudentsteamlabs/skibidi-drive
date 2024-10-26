@@ -144,8 +144,8 @@ def driver():
         Spin the motors. just randomize reverse forward until they seem to be
         driving correctly. if it works, dont change it
         """
-        leftm.spin(FORWARD,axises[0] * multi)
-        rightm.spin(REVERSE,axises[1] * multi)
+        leftm.spin(FORWARD,axises[1] * multi)
+        rightm.spin(REVERSE,axises[0] * multi)
     
 Thread(driver)
 
