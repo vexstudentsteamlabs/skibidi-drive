@@ -239,3 +239,4 @@ control.buttonX.pressed(wingit)
 
 #temp
 control.buttonY.pressed(autoton)  
+#TODO: Add overheat warning using (motor_group_10.temperature(PERCENT))
