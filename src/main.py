@@ -255,8 +255,11 @@ def overheat():
         lefttemp = leftm.temperature()
         righttemp = rightm.temperature()
         if (lefttemp + righttemp) / 2 >= 60:
-            
-            control.screen.print("ALERT: Overheated!")
-            control.screen.set_cursor(1,1)
+            for _ in range(9):
+                control.screen.clear_line(1)
+                control.rumble("-.-.")
+                control.screen.print("ALERT: Overheated!")
+                control.screen.set_cursor(1,1)
+                wait(50)
         wait(50)
 Thread(overheat)
