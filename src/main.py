@@ -38,7 +38,7 @@ rightm.set_stopping(BRAKE)
 #define controller
 control = Controller()
 
-multi = 20 #Sensitive amount. The more the more sensitive
+multi = 15 #Sensitive amount. The more the more sensitive
 
 #get gps
 gps = Gps(Ports.PORT15)
@@ -236,7 +236,27 @@ control.buttonR2.pressed(wheeldown)
 control.buttonR1.pressed(intake)  
 control.buttonX.pressed(wingit)  
 
+def reverseintake():
+    motorintakem.spin(REVERSE,600)
+    motorintake2.spin(FORWARD,600)
+
+def stopintake():
+    motorintakem.stop()
+    motorintake2.stop()
+
+control.buttonDown.pressed(reverseintake)
+control.buttonDown.released(stopintake)
 
 #temp
-control.buttonY.pressed(autoton)  
+#ontrol.buttonY.pressed(autoton)  
 #TODO: Add overheat warning using (motor_group_10.temperature(PERCENT))
+def overheat():
+    while True:
+        lefttemp = leftm.temperature()
+        righttemp = rightm.temperature()
+        if (lefttemp + righttemp) / 2 >= 60:
+            
+            control.screen.print("ALERT: Overheated!")
+            control.screen.set_cursor(1,1)
+        wait(50)
+Thread(overheat)
