@@ -270,23 +270,31 @@ def overheat():
                 overheated.remove(motor)
         wait(50)
 
+overheattoggle = False
 def overheatread():
     """
     Shows a reading of ALL overheated motors in a table format.
     """
-    global overheated, motors
-    readings = []
-    
-    for i, motor in enumerate(overheated):
-        if i % 2 == 0:
-            if i + 1 < len(overheated):
-                next_motor = overheated[i + 1]
-                readings.append(f"{motor}:{motors[motor].temperature} {next_motor}:{motors[next_motor].temperature}")
-            else:
-                readings.append(f"{motor}:{motors[motor].temperature}")
+    global overheattoggle
+    if not overheattoggle:
+        overheattoggle = True
+        global overheated, motors
+        readings = []
+        
+        for i, motor in enumerate(overheated):
+            if i % 2 == 0:
+                if i + 1 < len(overheated):
+                    next_motor = overheated[i + 1]
+                    readings.append(f"{motor}:{motors[motor].temperature} {next_motor}:{motors[next_motor].temperature}")
+                else:
+                    readings.append(f"{motor}:{motors[motor].temperature}")
 
-    control.screen.set_cursor(1, 1)
-    for line in readings:
-        control.screen.print(line)
+        control.screen.set_cursor(1, 1)
+        for line in readings:
+            control.screen.print(line)
+    else:
+        overheattoggle = False
+        control.screen.clear_screen()
 
+control.buttonY.pressed(overheatread)
 Thread(overheat)
