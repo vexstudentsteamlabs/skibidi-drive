@@ -250,16 +250,43 @@ control.buttonDown.released(stopintake)
 #temp
 #ontrol.buttonY.pressed(autoton)  
 #TODO: Add overheat warning using (motor_group_10.temperature(PERCENT))
+overheated = []
+motors = {
+    "LF" : d_lfor,
+    "RF" : d_rfor,
+    "LR" : d_lbac,
+    "RR" : d_rbac,
+    "IL": motorintake2,
+    "IR" : motorintakem,
+}
 def overheat():
+    global overheated,motors
+
     while True:
-        lefttemp = leftm.temperature()
-        righttemp = rightm.temperature()
-        if (lefttemp + righttemp) / 2 >= 60:
-            for _ in range(9):
-                control.screen.clear_line(1)
-                control.rumble("-.-.")
-                control.screen.print("ALERT: Overheated!")
-                control.screen.set_cursor(1,1)
-                wait(50)
+        for motor in motors.keys():
+            if motors[motor].temperature() >= 60:
+                overheated.append(motor)
+            if motor in overheated and motors[motor].temperature() < 60:
+                overheated.remove(motor)
         wait(50)
+
+def overheatread():
+    """
+    Shows a reading of ALL overheated motors in a table format.
+    """
+    global overheated, motors
+    readings = []
+    
+    for i, motor in enumerate(overheated):
+        if i % 2 == 0:
+            if i + 1 < len(overheated):
+                next_motor = overheated[i + 1]
+                readings.append(f"{motor}:{motors[motor].temperature} {next_motor}:{motors[next_motor].temperature}")
+            else:
+                readings.append(f"{motor}:{motors[motor].temperature}")
+
+    control.screen.set_cursor(1, 1)
+    for line in readings:
+        control.screen.print(line)
+
 Thread(overheat)
