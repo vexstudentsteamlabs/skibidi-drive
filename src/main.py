@@ -43,92 +43,115 @@ multi = 15 #Sensitive amount. The more the more sensitive
 #get gps
 gps = Gps(Ports.PORT15)
 
+pist3 = DigitalOut(brain.three_wire_port.f)
+motorintakem = Motor(Ports.PORT4)
+motorintake2 = Motor(Ports.PORT5)
+
+toggle124 = False
+def wheeldown():
+    #toggle
+    global toggle124
+    if not toggle124:
+        pist3.set(True)                                          
+        toggle124 = True
+    else:
+        pist3.set(False)
+        toggle124 = False
+
+isintakeready = False
+def intake():
+    #toggle
+    global isintakeready
+    if not isintakeready:
+        motorintakem.spin(FORWARD,600)
+        motorintake2.spin(REVERSE,600)
+        isintakeready = True
+    else:
+        motorintakem.stop()
+        motorintake2.stop()
+        isintakeready = False
+
+def move(left_speed: int, right_speed: int, duration: int):
+    leftm.set_velocity(left_speed, PERCENT)
+    rightm.set_velocity(right_speed, PERCENT)
+    leftm.spin(FORWARD)
+    rightm.spin(FORWARD)
+    wait(duration, MSEC)
+    leftm.stop()
+    rightm.stop()
+
+def turn(degrees: float, speed: int = 50):
+    """
+    Function to turn robot by a specific number of degrees.
+    Positive for clockwise, negative for counterclockwise.
+    """
+    if degrees > 0:
+        leftm.set_velocity(speed, PERCENT)
+        rightm.set_velocity(-speed, PERCENT)
+    else:
+        leftm.set_velocity(-speed, PERCENT)
+        rightm.set_velocity(speed, PERCENT)
+        
+    leftm.spin(FORWARD)
+    rightm.spin(FORWARD)
+    wait(abs(degrees) * 10, MSEC)  # Estimate time for turn based on degrees
+    leftm.stop()
+    rightm.stop()
+
+def realign():
+    turnvelo = 50
+    while abs(gps.rotation()) > 2:  # Tolerance of 2 degrees
+        if gps.rotation() > 0:
+            leftm.set_velocity(turnvelo, PERCENT)
+            rightm.set_velocity(-turnvelo, PERCENT)
+        else:
+            leftm.set_velocity(-turnvelo, PERCENT)
+            rightm.set_velocity(turnvelo, PERCENT)
+        leftm.spin(FORWARD)
+        rightm.spin(FORWARD)
+        wait(50, MSEC)
+        leftm.stop()
+        rightm.stop()
+        turnvelo -= 5
+    leftm.stop()
+    rightm.stop()
+
 def auton():
-    brain.screen.print("No auton :(")
+    gps.reset_rotation()
+        
+    # List of steps for autonomous
+    steps = [
+        {"move": (100, 50), "duration": 1000, "realign_after": True},
+        {"move": (80, 80), "duration": 2000, "realign_after": False},
+        {"turn": 90, "realign_after": False},
+        {"intake": True, "duration": 2000},
+        {"move": (100, 100), "duration": 1500, "realign_after": True}
+    ]
+
+    for step in steps:
+        if "move" in step:
+            move(step["move"][0], step["move"][1], step["duration"])
+        
+        if "turn" in step:
+            turn(step["turn"])
+        
+        if "intake" in step:
+            wheeldown()
+            intake()
+            wait(step["duration"])
+            wheeldown()
+            intake()
+
+        if step.get("realign_after", False):
+            realign()
+        
+        wait(100, MSEC)  # Optional wait between steps
 
 #TODO: implement auton
 def driver_control():
     global isgripping, pist1, pist2, pist3, pist4, isgripping2, toggle124, toggle124213, isintakeready
     brain.screen.clear_screen()
     # Helper function to move robot forward/backward or turn.
-    def move(left_speed: int, right_speed: int, duration: int):
-        leftm.set_velocity(left_speed, PERCENT)
-        rightm.set_velocity(right_speed, PERCENT)
-        leftm.spin(FORWARD)
-        rightm.spin(FORWARD)
-        wait(duration, MSEC)
-        leftm.stop()
-        rightm.stop()
-
-    def turn(degrees: float, speed: int = 50):
-        """
-        Function to turn robot by a specific number of degrees.
-        Positive for clockwise, negative for counterclockwise.
-        """
-        if degrees > 0:
-            leftm.set_velocity(speed, PERCENT)
-            rightm.set_velocity(-speed, PERCENT)
-        else:
-            leftm.set_velocity(-speed, PERCENT)
-            rightm.set_velocity(speed, PERCENT)
-            
-        leftm.spin(FORWARD)
-        rightm.spin(FORWARD)
-        wait(abs(degrees) * 10, MSEC)  # Estimate time for turn based on degrees
-        leftm.stop()
-        rightm.stop()
-
-    def realign():
-        turnvelo = 50
-        while abs(gps.rotation()) > 2:  # Tolerance of 2 degrees
-            if gps.rotation() > 0:
-                leftm.set_velocity(turnvelo, PERCENT)
-                rightm.set_velocity(-turnvelo, PERCENT)
-            else:
-                leftm.set_velocity(-turnvelo, PERCENT)
-                rightm.set_velocity(turnvelo, PERCENT)
-            leftm.spin(FORWARD)
-            rightm.spin(FORWARD)
-            wait(50, MSEC)
-            leftm.stop()
-            rightm.stop()
-            turnvelo -= 5
-        leftm.stop()
-        rightm.stop()
-
-    # Autonomous routine
-    def autoton() -> None:
-        gps.reset_rotation()
-        
-        # List of steps for autonomous
-        steps = [
-            {"move": (100, 50), "duration": 1000, "realign_after": True},
-            {"move": (80, 80), "duration": 2000, "realign_after": False},
-            {"turn": 90, "realign_after": False},
-            {"intake": True, "duration": 2000},
-            {"move": (100, 100), "duration": 1500, "realign_after": True}
-        ]
-
-        for step in steps:
-            if "move" in step:
-                move(step["move"][0], step["move"][1], step["duration"])
-            
-            if "turn" in step:
-                turn(step["turn"])
-            
-            if "intake" in step:
-                wheeldown()
-                intake()
-                wait(step["duration"])
-                wheeldown()
-                intake()
-
-            if step.get("realign_after", False):
-                realign()
-            
-            wait(100, MSEC)  # Optional wait between steps
-
-
 
     def driver():
         global multi
@@ -195,33 +218,6 @@ def driver_control():
     control.buttonL1.pressed(grip)  
 
     control.buttonL2.pressed(grip2)  
-    pist3 = DigitalOut(brain.three_wire_port.f)
-    isintakeready = False
-    motorintakem = Motor(Ports.PORT4)
-    motorintake2 = Motor(Ports.PORT5)
-
-    toggle124 = False
-    def wheeldown():
-        #toggle
-        global toggle124
-        if not toggle124:
-            pist3.set(True)                                          
-            toggle124 = True
-        else:
-            pist3.set(False)
-            toggle124 = False
-    
-    def intake():
-        #toggle
-        global isintakeready
-        if not isintakeready:
-            motorintakem.spin(FORWARD,600)
-            motorintake2.spin(REVERSE,600)
-            isintakeready = True
-        else:
-            motorintakem.stop()
-            motorintake2.stop()
-            isintakeready = False
 
     pist4 = DigitalOut(brain.three_wire_port.e)
 
@@ -304,3 +300,4 @@ control.buttonY.pressed(overheatread)
 Thread(overheat)"""
 
 competition = Competition(driver_control, auton)
+driver_control()
